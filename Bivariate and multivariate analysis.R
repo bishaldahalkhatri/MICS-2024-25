@@ -4103,9 +4103,56 @@ save_as_docx(
     "Table_Multivariable_Binary_Dietary_Outcomes.docx"
 )
 
-write_xlsx(ft_binary, path = "Table_Multivariable_Binary_Dietary_Outcomes.xlsx")
 
 
+# Model diagnostic  -------------------------------------------------------
+
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+AIC_table <- map_dfr(names(binary_models), function(outcome) {
+
+  map_dfr(names(binary_models[[outcome]]), function(model) {
+    
+    aic_result <- AIC(binary_models[[outcome]][[model]])
+
+    
+    tibble(
+      Outcome = outcome,
+      Model = model,
+      Effective_parameters = aic_result["eff.p"],
+      AIC = aic_result["AIC"],
+      Delta_bar = aic_result["deltabar"]
+    )
+  })
+})
+
+AIC_table
 
 
+#multicolinearity check
+library(performance)
+check_collinearity(binary_models$MDD$Model_4)
+
+#Influential observation
+plot(binary_models$MMF$Model_4,
+     which = 4)
+
+plot(binary_models$MMF$Model_4,
+     which = 5)                                  #Leverage
+cooks <- cooks.distance(binary_models$MAD$Model_4)
+which(
+  cooks > 4 / nrow(cleaned_data)
+)
+
+plot(
+  fitted(binary_models$MDD$Model_4),
+  residuals(binary_models$MDD$Model_4, type = "pearson"),
+  xlab = "Fitted probabilities",
+  ylab = "Pearson residuals",
+  main = "Residuals vs Fitted Values"
+)
+
+abline(h = 0, lty = 2)
 
