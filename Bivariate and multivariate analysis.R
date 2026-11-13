@@ -568,8 +568,7 @@ child_exposures <- c(
 binary_outcomes <- c(
   "MDD",
   "MMF",
-  "MAD",
-  "fp_binary"
+  "MAD"
 )
 
 child_bivariate_results <- formula_bivariate_cfpb(
@@ -783,7 +782,7 @@ ordinal_child_bivariate_results <- formula_bivariate_cfpo(
   predictors = child_exposures
 )
 
-
+setwd("C:/Bishal_document/MICS dataset/R_Final_analysis/MICS-2024-25")
 write_xlsx(ordinal_child_bivariate_results, "Child exposure ordinal outcome.xlsx")
 write_xlsx(child_bivariate_results, "logistic child exposure.xlsx")
 # Maternal_exposure variables ---------------------------------------------
@@ -2020,17 +2019,7 @@ binary_final <- binary_final |>
       `COR (95% CI)_MAD`,
     
     `MAD P` =
-      `Overall P_MAD`,
-    
-    
-    `CFP n/N (%)` =
-      `n/N (%)_fp_binary`,
-    
-    `CFP COR (95% CI)` =
-      `COR (95% CI)_fp_binary`,
-    
-    `CFP P` =
-      `Overall P_fp_binary`
+      `Overall P_MAD`
   )
 
 
@@ -2394,8 +2383,7 @@ Model_child <- svy_vglm(
     reverse = TRUE,
     
     parallel = TRUE ~
-      DA1 +
-      HL4 - 1
+      DA1 + HL4 - 1
   )
 )
 
@@ -3263,6 +3251,17 @@ save_as_docx(
 
 
 # Binary multivariate analysis --------------------------------------------
+options(survey.lonely.psu = "adjust")
+
+analysis_design <- svydesign(
+  id = ~PSU,
+  strata = ~stratum,
+  weights = ~chweight,
+  data = cleaned_data,
+  nest = TRUE
+)
+
+
 
 # Model 1: Child
 model1_vars <- c(
@@ -3291,6 +3290,20 @@ model4_vars <- c(
   geo_vars,
   wash_vars
 )
+
+MDD_Model1_Child <- svyglm(
+  reformulate(
+    child_vars,
+    response = "MDD"
+  ),
+  design = analysis_design,
+  family = quasibinomial()
+)
+summary(MDD_Model1_Child)
+class(MDD_Model1_Child)
+family(MDD_Model1_Child)
+AIC(MDD_Model1_Child)
+anyNA(coef(MDD_Model1_Child))
 
 run_binary_models <- function(outcome) {
   
@@ -3332,9 +3345,7 @@ binary_models <- list(
   
   MMF = run_binary_models("MMF"),
   
-  MAD = run_binary_models("MAD"),
-  
-  CFP = run_binary_models("fp_binary")
+  MAD = run_binary_models("MAD")
 )
 
 
@@ -3736,8 +3747,7 @@ binary_table$Outcome <- factor(
   levels = c(
     "MDD",
     "MMF",
-    "MAD",
-    "CFP"
+    "MAD"
   )
 )
 
@@ -3811,7 +3821,7 @@ desired_columns <- c(
   
   unlist(
     lapply(
-      c("MDD", "MMF", "MAD", "CFP"),
+      c("MDD", "MMF", "MAD"),
       
       function(outcome) {
         
@@ -3944,14 +3954,12 @@ ft_binary <- add_header_row(
     "",
     "MDD",
     "MMF",
-    "MAD",
-    "CFP"
+    "MAD"
   ),
   
   colwidths = c(
     1,
     1,
-    8,
     8,
     8,
     8
@@ -3994,16 +4002,7 @@ ft_binary <- set_header_labels(
   Estimate_MAD_Model_3 = "Model 3 aOR (95% CI)",
   P_display_MAD_Model_3 = "P",
   Estimate_MAD_Model_4 = "Model 4 aOR (95% CI)",
-  P_display_MAD_Model_4 = "P",
-  
-  Estimate_CFP_Model_1 = "Model 1 aOR (95% CI)",
-  P_display_CFP_Model_1 = "P",
-  Estimate_CFP_Model_2 = "Model 2 aOR (95% CI)",
-  P_display_CFP_Model_2 = "P",
-  Estimate_CFP_Model_3 = "Model 3 aOR (95% CI)",
-  P_display_CFP_Model_3 = "P",
-  Estimate_CFP_Model_4 = "Model 4 aOR (95% CI)",
-  P_display_CFP_Model_4 = "P"
+  P_display_MAD_Model_4 = "P"
 )
 
 
@@ -4103,3 +4102,10 @@ save_as_docx(
   path =
     "Table_Multivariable_Binary_Dietary_Outcomes.docx"
 )
+
+write_xlsx(ft_binary, path = "Table_Multivariable_Binary_Dietary_Outcomes.xlsx")
+
+
+
+
+
